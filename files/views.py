@@ -5,11 +5,13 @@ import requests
 
 import urllib.parse
 
+addr = 'http://localhost:8011/'
+
 # Create your views here.
 
 def files(request, slug):
 
-    res = requests.get('http://localhost:8000/eln?id=' + slug)
+    res = requests.get(addr + 'eln?id=' + slug)
 
     try:
 
@@ -31,12 +33,9 @@ def files(request, slug):
         
         return render(request, '404.html')
 
-    # return JsonResponse(json.loads(res.text))
-    # return redirect('http://localhost:8000/el?id=' + slug)
-
 def filesd(request, slug, mode):
 
-    res = requests.get('http://localhost:8000/eln?id=' + slug)
+    res = requests.get(addr + 'eln?id=' + slug)
 
     try:
 
