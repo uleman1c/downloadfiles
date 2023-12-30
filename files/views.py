@@ -59,9 +59,10 @@ def filesd(request, slug, mode):
 
 def arch(request):
 
-    filespath = 'I:\\Files\\'
-    
     curUid = request.headers.get('id')
+    curName = request.headers.get('filename')
+    
+    filespath = 'I:\\Files\\'
     
     target = filespath + curUid + ".tmp"
 
@@ -73,7 +74,7 @@ def arch(request):
     
     with multivolumefile.open(filespath + diruuid + '\\' + curUid + '.7z', mode='wb', volume=1024 * 1024 * 1024) as target_archive:
         with py7zr.SevenZipFile(target_archive, filters=filters, mode='w') as archive:
-            archive.write(target)
+            archive.write(target, curName)
     return JsonResponse( { 'dirid': diruuid, 'files': os.listdir(filespath + diruuid) } )
 
 

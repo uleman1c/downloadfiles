@@ -77,7 +77,7 @@ function getFileByParts(filename, idname, ssize){
 
  function getFileByPartsDirPos(number, index, size, dir, file, pos, partSize, blobs, callback) {
 
-    document.querySelector("#filesize").innerHTML = '' + (index + 1) + ' (' + (number + 1) + ') ' + Math.floor(pos * 100 / size) + "%";
+    document.querySelector("#filesize").innerHTML = '' + (index + 1) + ' (' + (number) + ') ' + Math.floor(pos * 100 / size) + "%";
     
     var url = "../gfbpd/";
 
@@ -167,7 +167,7 @@ function arch(filename, id, ssize) {
     
     var url = "../arch/";
 
-    fetch(url, { method: 'GET', headers: { id } })
+    fetch(url, { method: 'GET', headers: { id, filename } })
         .then( response => {
 
             response.json()
