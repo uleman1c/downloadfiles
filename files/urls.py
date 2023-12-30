@@ -11,4 +11,5 @@ urlpatterns = [
     path('arch/', views.arch),
     path('gfbpd/', views.gfbpd),
     path('deldir/', views.deldir),
+    path('filearchived/', views.filearchived),
     ]

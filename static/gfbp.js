@@ -81,7 +81,7 @@ function getFileByParts(filename, idname, ssize){
     
     var url = "../gfbpd/";
 
-    fetch(url, { method: 'GET', headers: { dir, file, pos } })
+    fetch(url, { method: 'GET', headers: { dir, file: encodeURIComponent(file), pos } })
         .then( response => {
 
             response.blob()
@@ -117,7 +117,7 @@ function getFileByPartsDir(dir, files, index, callback) {
  
         const blobs = [];
     
-        getFileByPartsDirPos(files.length, index, 1024 * 1024 * 1024, dir, curFile, 0, partSize, blobs, err => {
+        getFileByPartsDirPos(files.length, index, 1024 * 1024 * 1024, dir, curFile.name, 0, partSize, blobs, err => {
 
             if (err) {
                 
@@ -126,7 +126,7 @@ function getFileByPartsDir(dir, files, index, callback) {
             } else {
 
                 var link = document.createElement('a');
-                link.download = curFile;
+                link.download = curFile.name;
 
                 link.href = URL.createObjectURL(new Blob(blobs, {type: "application/zip"}));
         
@@ -161,7 +161,36 @@ function getFileByPartsDir(dir, files, index, callback) {
 
 }
 
-function arch(filename, id, ssize) {
+function filearchived(id, dirid) {
+    
+    var url = "../filearchived/";
+
+    fetch(url, { method: 'GET', headers: { id, dirid } })
+        .then( response => {
+
+            response.json()
+                .then(data => {
+
+                    if (data.compressing) {
+                       
+                        document.querySelector("#filesize").innerHTML = "Compressing..." + data.files.length
+    
+                        setTimeout(() => { filearchived(id, dirid) }, 10000)
+
+                    } else {
+
+                        getFileByPartsDir(data.dirid, data.files, 0, err => {
+
+                        })
+
+
+                    }      
+                })
+
+        })
+}
+
+function arch(filename, id, ssize, filesLength) {
     
     document.querySelector("#filesize").innerHTML = "Compressing..."
     
@@ -173,11 +202,19 @@ function arch(filename, id, ssize) {
             response.json()
                 .then(data => {
 
-                    getFileByPartsDir(data.dirid, data.files, 0, err => {
+                    if (data.compressing) {
+                       
+                        filearchived(id, data.dirid)
+
+                    } else {
+                        
+                        getFileByPartsDir(data.dirid, data.files, 0, err => {
+
+                        })
+
+                    }
 
 
-
-                    })
 
                 })
 

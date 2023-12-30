@@ -13,7 +13,12 @@ import os
 
 import shutil
 
+import threading
+
 addr = 'http://localhost:8011/'
+
+filespath = 'I:\\Files\\'
+    
 
 # Create your views here.
 
@@ -25,10 +30,6 @@ def files(request, slug):
 
         resdict = json.loads(res.text)
         
-        filespath = 'I:\\Files\\'
-
-        
-
         fr = FileResponse(open(filespath + resdict['id'] + ".tmp",'rb'))
 
         fr['Content-Disposition'] = 'attachment; filename=' + urllib.parse.quote(resdict['filename'].encode('utf8'))
@@ -49,39 +50,86 @@ def filesd(request, slug, mode):
 
         resdict = json.loads(res.text)
         
-        filespath = 'I:\\Files\\'
-
         return render(request, 'index.html', locals())
 
     except:
     
         return render(request, '404.html')
 
-def arch(request):
 
-    curUid = request.headers.get('id')
-    curName = request.headers.get('filename')
-    
-    filespath = 'I:\\Files\\'
-    
+def archfile(diruuid, curUid, curName):
+
     target = filespath + curUid + ".tmp"
 
-    diruuid = str(uuid.uuid4())
-
-    os.mkdir(filespath + diruuid)
-    
     filters = [{'id': py7zr.FILTER_COPY}]
     
     with multivolumefile.open(filespath + diruuid + '\\' + curUid + '.7z', mode='wb', volume=1024 * 1024 * 1024) as target_archive:
         with py7zr.SevenZipFile(target_archive, filters=filters, mode='w') as archive:
             archive.write(target, curName)
-    return JsonResponse( { 'dirid': diruuid, 'files': os.listdir(filespath + diruuid) } )
+
+    os.remove(filespath + curUid + ".lck")
+
+def extFileList(dir):
+
+    fileList = os.listdir(filespath + dir)
+
+    extFileList = list()
+    
+    for fi in fileList:
+
+        #file_stats = os.stat(filespath + dir + '\\' + fi)
+
+        fileSize = 0 # file_stats.st_size
+
+        extFileList.append( { 'name': fi, 'size': fileSize } )
+
+    return extFileList
+
+
+def filearchived(request):
+
+    curUid = request.headers.get('id')
+    curDirUid = request.headers.get('dirid')
+
+    lock = filespath + curUid + ".lck"
+
+    return JsonResponse( { 'compressing': os.path.isfile(lock), 'dirid': curDirUid, 'files': extFileList(curDirUid) } )
+    
+def arch(request):
+
+    curUid = request.headers.get('id')
+    curName = request.headers.get('filename')
+    
+    lock = filespath + curUid + ".lck"
+
+    isFileLocked = os.path.isfile(lock)
+
+    if isFileLocked:
+
+        lockFile = open(lock, 'r')
+
+        diruuid = lockFile.readline()
+
+    else:
+
+        diruuid = str(uuid.uuid4())
+
+        lockFile = open(lock, 'w')
+        lockFile.write(diruuid)
+        lockFile.close()
+
+        os.mkdir(filespath + diruuid)
+        
+        thread = threading.Thread(target=archfile, args=(diruuid, curUid, curName))
+        thread.start()        
+
+
+    return JsonResponse( { 'compressing': True, 'dirid': diruuid, 'files': extFileList(diruuid) } )
+#        return JsonResponse( { 'dirid': diruuid, 'files': os.listdir(filespath + diruuid) } )
 
 
 def deldir(request):
 
-    filespath = 'I:\\Files\\'
-    
     diruuid = request.headers.get('dir')
     
     shutil.rmtree(filespath + diruuid)
@@ -95,10 +143,8 @@ def deldir(request):
 
 def gfbpd(request):
 
-    filespath = 'I:\\Files\\'
-    
     curDirUid = request.headers.get('dir')
-    curFile = request.headers.get('file')
+    curFile =  urllib.parse.unquote(request.headers.get('file'), encoding='utf-8')
     pos = int(request.headers.get('pos'))
 
     frf = open(filespath + curDirUid + '\\' + curFile, 'rb')
@@ -116,8 +162,6 @@ def gfbpd(request):
 
 def gfbp(request):
 
-    filespath = 'I:\\Files\\'
-    
     curUid = request.headers.get('id')
     pos = int(request.headers.get('pos'))
 
